@@ -25,34 +25,43 @@ Getting a page to render on Django is a multi-step process, and is a little comp
 
 Let’s first create a splash page for our restaurant. Create a folder named `templates` in our `about` folder. Create a file called `splash.html` in `about/templates` containing:
 
+```html
 <h1> 192 Restaurant </h1>
 <p> A restaurant where the only meal is tears from Java programmers. <p>
+```
 
 Feel free to open up the file in your favourite web browser to see how the page looks. Next, let’s define a *view* in `about/views.py`. Add the following code to `view.py`:
 
+```python
 def splash(request):
 	return render(request, "splash.html", {})
+```
 
 The `render` function is provided by Django (and is imported by default), and takes in the request used to prompt the render (i.e. the `request` parameter in the function header), the HTML file and a dictionary of Python variables to pass through to the template. Note the similarity between this function definition and the decorated functions we wrote in the Flask framework.
 
 However, we haven’t linked this view to any particular route. To do this, open `restaurant/urls.py` and import the view we wrote by adding `from about.views imoprt splash` to the top of the file. Also import the `path` module from Django (so we don’t have to write any regular expressions) using `from django.urls import path`. Finally, we specify the route by appending the route, view and name to the `urlpatterns` list the route specification:
 
+```python
 urlpatterns = [
 	url(r'^admin/', admin.site.urls),
 	path('', splash, name='splash'),
 ]
- Finally, if we open our browser to `localhost:8000`, we should see our splash page!
+```
+  
+Finally, if we open our browser to `localhost:8000`, we should see our splash page!
 
 ## Defining Models
 Right now, our application is a little basic. It would be nice if we were able to show users our restaurants menu. Assume that our menu is constantly changing. Therefore, we want to be able to use a database to store all the different meals. Let’s create a new app to handle this logic using `python manage.py startapp menu`. Before we write any functionality, we want to do is link our newly created app to our top-level restaurant project. Open `restaurant/settings.py` and add `menu` to `INSTALLED_APPS`.
 
 The first thing we want to implement is a class that represents each meal in our menu. Django abstracts all SQL interactions so that you can just write native Python code to define all database behaviour. However, we still need to be able to tell Django that our `Meal` class should be designed for a SQL database - a strongly typed language. This will involve specifying the types of data that our object will contain. Open `menu/models.py` and add the following code:
 
+```python
 class Meal(models.Model):
 	name = models.CharField(max_length=200)
 	description = models.TextField()
 	vegan = models.BooleanField()
 	price = models.DecimalField(max_digits=6, decimal_places=2)
+```
 
 Django comes with a variety of pre-defined model fields ranging from calendar dates to simple text fields. Here we use:
 
@@ -84,10 +93,12 @@ We now want a way to programmatically retrieve all the meals and pass them throu
 
 Finally, we can iterate over these objects in our template using a similar syntax as in Flask:
 
+```html
 {% for meal in meals %}
 	<p> {{meal.name}}: {{meal.description}} </p>
 	<p> Vegan: {{meal.vegan}} </p>
 {% endfor %}
+```
 
 ## Conclusion
 In this lecture, we developed an application that uses a SQL database to store meals for a restaurant. These notions are the fundamentals behind any large scale web service from Dropbox to Facebook. In particular, Django does a lot of heavy lifting for us so we don’t need to implement certain complicated aspects of web development like SQL interactions and user accounts. In the next lecture, we will cover (non-admin) user accounts, more complex database querying and cloud deployment.
