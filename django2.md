@@ -127,7 +127,7 @@ These are forms that will be used for creating new users and logging users in, r
 Next, We’ll import the `authenticate` and `login` functions from Django with `from django.contrib.auth import authenticate, login`. Then we’ll create a view named `login_view` containing:
 
 ```python
-def login_(request):
+def login_view(request):
     if request.method == "POST":
         username = request.POST["username"]
         password = request.POST["password"]
@@ -135,7 +135,7 @@ def login_(request):
         if user is not None:
             login(request, user)
             return redirect("/")
-    return render(request, 'signin.html', {})
+    return render(request, 'accounts.html', {})
 ```
 
 If the method is `POST`, then we know we need to be logging in the user after a form submission. Thus, we take the variables for `username` and `password` (which is all Django needs to verify a user) and pass them to the `authenticate` function. This function returns a user object if the username/password combination was valid and `None` otherwise. If the username/password was valid, then we actually log the user in and redirect them home. (It’s good practice to display some error back to the user!) If the request is a `GET` method, we just render the HTML template. 
@@ -154,14 +154,12 @@ We can test these views out (after creating their corresponding URLs) with our a
 Now, we need to give users the ability to create their own users, instead of relying on the `createsuperuser` command. To do this, we import the `User` model from Django’s core library with `from django.contrib.auth.models import User` and call `create_user` on the supplied arguments. This is implemented as follows:
 
 ```python
-def signup_(request):
-    if request.method == "POST":
-        user = User.objects.create_user(username=request.POST['username'],
+def signup_view(request):
+	user = User.objects.create_user(username=request.POST['username'],
 					email=request.POST['email'],
 					password=request.POST['password'])
-        login(request, user)
-        return redirect('/')
-    return render(request, 'signin.html', {})
+	login(request, user)
+	return redirect('/')
 ```
 
 Essentially, we just create the user and log them in, same as in our `login_view` view. Notice that `create_user` actually returns the user for us to login. In fact, all `create` functions from Django’s ORM will return the created object. This is useful for adding the object as a foreign key after instantiation, for example.
