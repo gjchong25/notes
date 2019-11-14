@@ -39,11 +39,11 @@ def splash(request):
 
 The `render` function is provided by Django (and is imported by default), and takes in the request used to prompt the render (i.e. the `request` parameter in the function header), the HTML file and a dictionary of Python variables to pass through to the template. Note the similarity between this function definition and the decorated functions we wrote in the Flask framework.
 
-However, we haven’t linked this view to any particular route. To do this, open `restaurant/urls.py` and import the view we wrote by adding `from about.views imoprt splash` to the top of the file. Also import the `path` module from Django (so we don’t have to write any regular expressions) using `from django.urls import path`. Finally, we specify the route by appending the route, view and name to the `urlpatterns` list the route specification:
+However, we haven’t linked this view to any particular route. To do this, open `restaurant/urls.py` and import the view we wrote by adding `from about.views import splash` to the top of the file. Finally, we specify the route by appending the route, view and name to the `urlpatterns` list the route specification:
 
 ```python
 urlpatterns = [
-	url(r'^admin/', admin.site.urls),
+	path('admin/', admin.site.urls),
 	path('', splash, name='splash'),
 ]
 ```
