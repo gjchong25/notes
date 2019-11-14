@@ -7,7 +7,9 @@ In this lecture, we dive deeper into the functionality of Django by building a s
 These notes include the code (available on the course website) for you to replicate by following along these notes. 
 
 ## Project Initialization
-We install Django through pip by using `pip install django`. Then, we can create a new Django project by running `django-admin startproject notes`. We can then `cd` into the folder and run `python manage.py runserver` to view a cute splash screen at `localhost:8000`, confirming our project works. Next, we can create an app named `core` that contains all the features for our app using `python manage.py`. The flat app architecture is sometimes favored in the community and is used by organizations such as DoorDash. For educational purposes, it’s useful to simplify all the Django boilerplate this way. Let’s add this app to our `INSTALLED_APPS` in `notes/settings.py` by adding an element to the array named  `'core'`.
+We install Django through pip by using `pip install django`. Then, we can create a new Django project by running `django-admin startproject notes`. We can then `cd` into the folder and run `python manage.py runserver` to view a cute splash screen at `localhost:8000`, confirming our project works. Next, we can create an app named `core` that contains all the features for our app using `python manage.py startapp core`. 
+
+The flat app architecture is sometimes favoured in the community and is used by organizations such as DoorDash. For educational purposes, it’s useful to simplify all the Django boilerplate this way. Let’s add this app to our `INSTALLED_APPS` in `notes/settings.py` by adding an element to the array named  `'core'`.
 
 ## Basic Views and Templates
 Let’s get a basic “hello world” page running. First, we must consider what URL route we want our page to be displayed on. Then, we must create a *view* function that is invoked when the route is accessed which renders some HTML file. Finally, we must create the HTML template itself. Let’s implement these in reverse order to gain a better understanding.
@@ -30,11 +32,11 @@ def splash(request):
     return render(request, "splash.html", {})
 ```
 
-Assign a route to this view by opening `notes/urls.py` and importing the view we wrote by adding `from core.views imoprt splash` to the top of the file. Also import the `path` module from Django (so we don’t have to write any regular expressions) using `from django.urls import path`. Finally, we specify the route by appending the route, view and name to the `urlpatterns` list the route specification:
+Assign a route to this view by opening `notes/urls.py` and importing the view we wrote by adding `from core.views import splash` to the top of the file. Finally, we specify the route by appending the route, view and name to the `urlpatterns` list the route specification:
 
 ```python
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
+    path('admin/', admin.site.urls),
     path('', splash, name='splash'),
 ]
 ```
@@ -52,9 +54,13 @@ class Note(models.Model):
     author = models.ForeignKey(User, on_delete=models.DO_NOTHING)
 ```
 
-The only particularly interesting thing model field about this `Note` model is the `ForeignKey` field. A *foreign key* in a relational database is a link from one model (or /table/) to another. This structures the data in a relational way so that querying each note won’t just return an author id, but the author object itself. This is one of the benefits of using a relationship database: simple querying of multiple models that have relations. 
+The only particularly interesting thing model field about this `Note` model is the `ForeignKey` field. A *foreign key* in a relational database is a link from one model (or **table**) to another. This structures the data in a relational way so that querying each note won’t just return an author id, but the author object itself. This is one of the benefits of using a relationship database: simple querying of multiple models that have relations. 
 
-Note that this foreign key makes a reference to the User object (predefined by Django) and as such we have to import it by adding `from django.contrib.auth.models import User` to the top of the models file. In our views file, let’s query this model as before by importing the model using `from core.models import Note`. Then, let’s get all the instances in the `splash` view by using `Note.objects.all()`. We pass all the notes through to the view as usual. Add this model to our admin page in `admin.py` and create a superuser using `python manage.py createsuperuser`. Create a few notes at `localhost:8000/admin` and make sure they show up on our `splash` view for a quick sanity check.
+Note that this foreign key makes a reference to the predefined **User** object (which is what `createsuperuser` and the focus of this lecture). As suc,h we have to import it by adding `from django.contrib.auth.models import User` to the top of the models file. 
+
+In our views file, let’s query the `Note` model as before by importing the model using `from core.models import Note`. Then, let’s get all the instances in the `splash` view by using `Note.objects.all()`. We pass all the notes through to the view as usual. 
+
+Add this model to our admin page in `admin.py` and create a superuser using `python manage.py createsuperuser`. Create a few notes at `localhost:8000/admin` and make sure they show up on our `splash` view for a quick sanity check.
 
 Our app is now in a similar state of functionality to our previous restaurant app. However, it would be nice to incorporate some sense of identity using accounts. In the following sections, we’ll extend this application to work with user input to create accounts and new notes.
 
@@ -73,6 +79,8 @@ Let’s start by adding a way for us to accept user input to create new notes (w
 
 A form in HTML is a way to obtain user input. It operates by defining fields with unique names (that will eventually correspond to variable names in Python) and a submit field that will make either a GET or POST request to a specific route defined using the `method` and `action` parameters.
 
+Something also interesting is the inclusion of a `{% csrf_token %}`, which is a security measure that prevents other sites from making requests to `POST /` on our behalf.
+
 Note that in this case, we’re making a POST request to the `/` route, which we already use to render a template, accepting a GET request by default. Let’s edit our splash view to handle a possible POST request before rendering a template. We can do this by checking if `request.method` is equal to `“POST”` before handling our associated post logic. In particular, we can retrieve our POST request parameters by using the dictionary `request.POST`. Let’s print out the note title and body as following in our `splash` view:
 
 ```python
@@ -88,7 +96,9 @@ body = request.POST["body"]
 Note.objects.create(title=title, body=body, author=request.user)
 ```
 
-We finally redirect the user after creating a new note. It’s important that we are logged in through the admin page in order to have a logged in user to set the foreign key of each note.
+We finally redirect the user after creating a new note. It’s important that we are logged in through the admin page in order to have a logged in user to set the foreign key of each note. 
+
+This application could be finished, but now we have these global notes that are accessible to everybody. To make it more private, we'll start incorporating **user accounts** into the mix. Previously, we've created accounts using `createsuperuser` and logged in using the admin page. In this section, we'll create custom forms for logging in and signing up and we can programmatically manage user account states!
 
 ## Logging in and Logging out
 We are finally able to accept user input to use Django’s robust authentication system. We’ll want to create a view that handles both rendering the login/signup forms as well as process their inputs. First, we will create a template containing:
