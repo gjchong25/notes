@@ -101,7 +101,7 @@ We finally redirect the user after creating a new note. It’s important that we
 This application could be finished, but now we have these global notes that are accessible to everybody. To make it more private, we'll start incorporating **user accounts** into the mix. Previously, we've created accounts using `createsuperuser` and logged in using the admin page. In this section, we'll create custom forms for logging in and signing up and we can programmatically manage user account states!
 
 ## Logging in and Logging out
-We are finally able to accept user input to use Django’s robust authentication system. We’ll want to create a view that handles both rendering the login/signup forms as well as process their inputs. First, we will create a template containing:
+We are finally able to accept user input to use Django’s robust authentication system. We’ll want to create a view that handles both rendering the login/signup forms as well as process their inputs. First, we will create a template at `core/templates/accounts.html` containing:
 
 ```python
 <h1>Sign Up</h1>
@@ -122,9 +122,9 @@ We are finally able to accept user input to use Django’s robust authentication
 </form>
 ```
 
-It’s important to notice the `name` attribute on each input as this is what serves as the key to index into the `request.POST` dictionary.
+These are forms that will be used for creating new users and logging users in, respectively. The `placeholder` element is just to be nice to our users, telling them what each field is for. The actually important thing to notice the `name` attribute on each input as this is what serves as the key to index into the `request.POST` dictionary. 
 
-Next, We’ll import the `authenticate` and `login` functions from Django with `from django.contrib.auth import authenticate, login`. Then we’ll create a view named `login_` (notice the underscore due to the `login` function existing) containing:
+Next, We’ll import the `authenticate` and `login` functions from Django with `from django.contrib.auth import authenticate, login`. Then we’ll create a view named `login_view` containing:
 
 ```python
 def login_(request):
@@ -157,13 +157,44 @@ Now, we need to give users the ability to create their own users, instead of rel
 def signup_(request):
     if request.method == "POST":
         user = User.objects.create_user(username=request.POST['username'],
-									email=request.POST['email'],
-									password=request.POST['password'])
+					email=request.POST['email'],
+					password=request.POST['password'])
         login(request, user)
         return redirect('/')
     return render(request, 'signin.html', {})
 ```
 
-Essentially, we just create the user and log them in, same as in our `login_` view. Notice that `create_user` actually returns the user for us to login. In fact, all `create` functions from Django’s ORM will return the created object. This is useful for adding the object as a foreign key after instantiation, for example.
+Essentially, we just create the user and log them in, same as in our `login_view` view. Notice that `create_user` actually returns the user for us to login. In fact, all `create` functions from Django’s ORM will return the created object. This is useful for adding the object as a foreign key after instantiation, for example.
 
 And that is all! This is how simple Django authentication with a relational database system can be.
+
+## User-Specifc Behaviour
+Now, we can implement some functionality that depends on the user's account state, for example deleting posts. 
+
+Let's start with the simplest account-specific behaviour: some sort of data encapsulation. When we are not logged in, we should see a link to the accounts page. When we are logged in, we should see **only** the notes that we created! 
+
+For detecting if an account is logged in or not, we can use the {% if user.is_authenticated %} directive. Let's add an if-else clause to our HTML (weird, I know) by using the above conditional and including a `{% else %}` clause, ended with a `{% endif %}` directive.
+
+If the user isn't logged in (the else clause), then we can render `<a href="/login">Log In</a>`, and if we are logged in then, we can render the notes as before. Notice that we can use if-else clauses in our code (even with standard booleans passed in) to control render flow of our template!
+
+Let's now restrict our querying to the notes we've made. This can be done using easily in our `splash` view by changing our Notes query to:
+
+```python
+Note.objects.filter(author=request.user)
+```
+
+Notice that when the user is logged in, the `request` object contains a serialized version of the User object, complete with all of its fields and such.
+
+The final thing we'll want to do is to an the ability to delete notes. This can be done by creating another view specifically for deletion, where we'll get one specific note (specified as a GET parameter) and subsequently delete it:
+
+```python
+note = Note.objects.get(id=request.GET['id'])
+note.delete()
+```
+
+## Conclusion
+Now, we have a notes app that has complete accounts support! This is just a stone throw from how we build large-scale user-based applications, such as social media sites. Notice that we are still just taking the core project structure from last week, but now sprinkling some nice Django sauce all over it!
+
+## Future Work
+- The delete functionality is actually rather insecure with respect to accounts. How can we edit the delete view to make this functionality more secure?
+- What other behaviour for `on_delete` could we support?
